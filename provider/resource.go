@@ -247,10 +247,10 @@ func resourceDockerImage() *schema.Resource {
 
 func resourceDockerImageCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*docker.Client)
-        authConfig, err := getAuthConfig(d)
-        if err != nil {
-                return err
-        }
+	authConfig, err := getAuthConfig(d)
+	if err != nil {
+		return err
+	}
 
 	switch {
 	case d.Get("pull").(bool):
@@ -394,16 +394,16 @@ func getAuthConfig(d *schema.ResourceData) (map[string]docker.AuthConfiguration,
 			ServerAddress: authHostname,
 		}
 	}
-        return authConfig, nil
+	return authConfig, nil
 }
 
 func resourceDockerImageUpdate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*docker.Client)
 
-        authConfig, err := getAuthConfig(d)
-        if err != nil {
-                return err
-        }
+	authConfig, err := getAuthConfig(d)
+	if err != nil {
+		return err
+	}
 
 	if d.HasChange("push") && d.Get("push").(bool) {
 		err := client.PushImage(docker.PushImageOptions{
@@ -446,11 +446,11 @@ func resourceDockerImageExists(d *schema.ResourceData, meta interface{}) (bool, 
 
 	_, err := client.InspectImage(imageName)
 	switch err {
-        case nil:
-                return true, nil
-        case docker.ErrNoSuchImage:
+	case nil:
+		return true, nil
+	case docker.ErrNoSuchImage:
 		return false, nil
-        default:
-                return false, err
+	default:
+		return false, err
 	}
 }
