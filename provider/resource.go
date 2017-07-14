@@ -1,7 +1,9 @@
 package provider
 
 import (
+	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"time"
@@ -21,7 +23,7 @@ func resourceDockerImage() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"registry": {
 				Type:     schema.TypeString,
-                                Optional: true,
+				Optional: true,
 				ForceNew: true,
 			},
 
@@ -34,7 +36,7 @@ func resourceDockerImage() *schema.Resource {
 			"tag": {
 				Type:     schema.TypeString,
 				Default:  "latest",
-                                Optional: true,
+				Optional: true,
 				ForceNew: true,
 			},
 
@@ -143,20 +145,20 @@ func resourceDockerImage() *schema.Resource {
 
 			"digests": {
 				Type:     schema.TypeList,
-				Elem:     schema.TypeString,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 				Computed: true,
 				ForceNew: true,
 			},
 
 			"all_tags": {
 				Type:     schema.TypeList,
-				Elem:     schema.TypeString,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 				Computed: true,
 			},
 
 			"labels": {
 				Type:     schema.TypeMap,
-				Elem:     schema.TypeString,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
 				ForceNew: true,
 			},
@@ -216,28 +218,28 @@ func resourceDockerImage() *schema.Resource {
 
 			"ulimit_soft": {
 				Type:     schema.TypeMap,
-				Elem:     schema.TypeInt,
+				Elem:     &schema.Schema{Type: schema.TypeInt},
 				Optional: true,
 				ForceNew: true,
 			},
 
 			"ulimit_hard": {
 				Type:     schema.TypeMap,
-				Elem:     schema.TypeInt,
+				Elem:     &schema.Schema{Type: schema.TypeInt},
 				Optional: true,
 				ForceNew: true,
 			},
 
 			"build_args": {
 				Type:     schema.TypeMap,
-				Elem:     schema.TypeString,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 				Optional: true,
 				ForceNew: true,
 			},
 
 			"auth": {
 				Type:      schema.TypeMap,
-				Elem:      schema.TypeString,
+				Elem:      &schema.Schema{Type: schema.TypeString},
 				Optional:  true,
 				Sensitive: true,
 			},
@@ -246,7 +248,11 @@ func resourceDockerImage() *schema.Resource {
 }
 
 func resourceDockerImageCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*docker.Client)
+	providerConfig := meta.(*ProviderConfig)
+	client, err := providerConfig.NewClient()
+	if err != nil {
+		return err
+	}
 	authConfig, err := getAuthConfig(d)
 	if err != nil {
 		return err
@@ -257,12 +263,17 @@ func resourceDockerImageCreate(d *schema.ResourceData, meta interface{}) error {
 		repoName = strings.Join([]string{d.Get("registry").(string), repoName}, "/")
 	}
 
+	imageName := repoName
+	if d.Get("tag").(string) != "" {
+		imageName = strings.Join([]string{imageName, d.Get("tag").(string)}, ":")
+	}
+
 	switch {
 	case d.Get("pull").(bool):
 		err := client.PullImage(docker.PullImageOptions{
 			Repository:        repoName,
 			Tag:               d.Get("tag").(string),
-			InactivityTimeout: time.Duration(d.Get("timeout").(int64)) * time.Second,
+			InactivityTimeout: time.Duration(d.Get("timeout").(int)) * time.Second,
 		}, authConfig[d.Get("registry").(string)])
 		if err != nil {
 			return err
@@ -281,53 +292,58 @@ func resourceDockerImageCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 	case d.Get("build_local_path").(string) != "" || d.Get("build_remote_path").(string) != "":
 		ulimitMap := make(map[string]*docker.ULimit)
-		for ulimitName, ulimitSoft := range d.Get("ulimit_soft").(map[string]int64) {
+		for ulimitName, ulimitSoft := range d.Get("ulimit_soft").(map[string]interface{}) {
 			ulimit, ok := ulimitMap[ulimitName]
 			if !ok {
 				ulimit = &docker.ULimit{Name: ulimitName}
 				ulimitMap[ulimitName] = ulimit
 			}
-			ulimit.Soft = ulimitSoft
+			ulimit.Soft = ulimitSoft.(int64)
 		}
-		for ulimitName, ulimitHard := range d.Get("ulimit_hard").(map[string]int64) {
+		for ulimitName, ulimitHard := range d.Get("ulimit_hard").(map[string]interface{}) {
 			ulimit, ok := ulimitMap[ulimitName]
 			if !ok {
 				ulimit = &docker.ULimit{Name: ulimitName}
 				ulimitMap[ulimitName] = ulimit
 			}
-			ulimit.Hard = ulimitHard
+			ulimit.Hard = ulimitHard.(int64)
 		}
 		var ulimitList []docker.ULimit
 		for _, ulimit := range ulimitMap {
 			ulimitList = append(ulimitList, *ulimit)
 		}
 		var buildArgList []docker.BuildArg
-		for k, v := range d.Get("build_args").(map[string]string) {
+		for k, v := range d.Get("build_args").(map[string]interface{}) {
 			buildArgList = append(buildArgList, docker.BuildArg{
 				Name:  k,
-				Value: v,
+				Value: v.(string),
 			})
 		}
-		imageName := strings.Join([]string{d.Get("name").(string), d.Get("tag").(string)}, ":")
-		if d.Get("registry").(string) != "" {
-			imageName = strings.Join([]string{d.Get("registry").(string), imageName}, "/")
+
+		labelMap := make(map[string]string)
+		for k, v := range d.Get("labels").(map[string]interface{}) {
+			labelMap[k] = v.(string)
 		}
+
+		buf := new(bytes.Buffer)
+
 		err := client.BuildImage(docker.BuildImageOptions{
 			Name:              imageName,
 			Dockerfile:        d.Get("dockerfile").(string),
-			SuppressOutput:    true,
+			SuppressOutput:    false,
+			OutputStream:      buf,
 			NoCache:           d.Get("nocache").(bool),
 			Pull:              d.Get("pull").(bool),
-			Memory:            d.Get("memory").(int64),
-			Memswap:           d.Get("memswap").(int64),
-			CPUShares:         d.Get("cpushares").(int64),
-			CPUQuota:          d.Get("cpuquota").(int64),
-			CPUPeriod:         d.Get("cpuperiod").(int64),
-			CPUSetCPUs:        d.Get("cpusetcpus").(string),
+			Memory:            int64(d.Get("memory").(int)),
+			Memswap:           int64(d.Get("memswap").(int)),
+			CPUShares:         int64(d.Get("cpu_shares").(int)),
+			CPUQuota:          int64(d.Get("cpu_quota").(int)),
+			CPUPeriod:         int64(d.Get("cpu_period").(int)),
+			CPUSetCPUs:        d.Get("cpu_set_cpus").(string),
 			NetworkMode:       d.Get("networkmode").(string),
-			CgroupParent:      d.Get("cgroupparent").(string),
-			InactivityTimeout: time.Duration(d.Get("timeout").(int64)) * time.Second,
-			Labels:            d.Get("labels").(map[string]string),
+			CgroupParent:      d.Get("cgroup_parent").(string),
+			InactivityTimeout: time.Duration(d.Get("timeout").(int)) * time.Second,
+			Labels:            labelMap,
 			Remote:            d.Get("build_remote_path").(string),
 			ContextDir:        d.Get("build_local_path").(string),
 			AuthConfigs: docker.AuthConfigurations{
@@ -336,6 +352,7 @@ func resourceDockerImageCreate(d *schema.ResourceData, meta interface{}) error {
 			Ulimits:   ulimitList,
 			BuildArgs: buildArgList,
 		})
+		log.Printf("docker build command output: %s\n", buf.String())
 		if err != nil {
 			return err
 		}
@@ -346,26 +363,27 @@ func resourceDockerImageCreate(d *schema.ResourceData, meta interface{}) error {
 			Name:              d.Get("name").(string),
 			Registry:          d.Get("registry").(string),
 			Tag:               d.Get("tag").(string),
-			InactivityTimeout: time.Duration(d.Get("timeout").(int64)) * time.Second,
+			InactivityTimeout: time.Duration(d.Get("timeout").(int)) * time.Second,
 		}, authConfig[d.Get("registry").(string)])
 		if err != nil {
 			return err
 		}
 	}
 
+	d.SetId(imageName)
 	return resourceDockerImageRead(d, meta)
 }
 
 func resourceDockerImageRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*docker.Client)
-
-	imageName := strings.Join([]string{d.Get("name").(string), d.Get("tag").(string)}, ":")
-	if d.Get("registry").(string) != "" {
-		imageName = strings.Join([]string{d.Get("registry").(string), imageName}, "/")
+	providerConfig := meta.(*ProviderConfig)
+	client, err := providerConfig.NewClient()
+	if err != nil {
+		return err
 	}
 
-	image, err := client.InspectImage(imageName)
+	image, err := client.InspectImage(d.Id())
 	if err != nil {
+		d.SetId("")
 		return err
 	}
 	d.Set("id", image.ID)
@@ -386,7 +404,7 @@ func resourceDockerImageRead(d *schema.ResourceData, meta interface{}) error {
 
 func getAuthConfig(d *schema.ResourceData) (map[string]docker.AuthConfiguration, error) {
 	authConfig := make(map[string]docker.AuthConfiguration)
-	authData := d.Get("auth").(map[string]string)
+	authData := d.Get("auth").(map[string]interface{})
 	for authAddress, authPassword := range authData {
 		p := strings.SplitN(authAddress, "@", 2)
 		if len(p) < 2 {
@@ -395,7 +413,7 @@ func getAuthConfig(d *schema.ResourceData) (map[string]docker.AuthConfiguration,
 		authHostname, authUsername := p[1], p[0]
 		authConfig[authHostname] = docker.AuthConfiguration{
 			Username:      authUsername,
-			Password:      authPassword,
+			Password:      authPassword.(string),
 			ServerAddress: authHostname,
 		}
 	}
@@ -403,7 +421,11 @@ func getAuthConfig(d *schema.ResourceData) (map[string]docker.AuthConfiguration,
 }
 
 func resourceDockerImageUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*docker.Client)
+	providerConfig := meta.(*ProviderConfig)
+	client, err := providerConfig.NewClient()
+	if err != nil {
+		return err
+	}
 
 	authConfig, err := getAuthConfig(d)
 	if err != nil {
@@ -415,7 +437,7 @@ func resourceDockerImageUpdate(d *schema.ResourceData, meta interface{}) error {
 			Name:              d.Get("name").(string),
 			Registry:          d.Get("registry").(string),
 			Tag:               d.Get("tag").(string),
-			InactivityTimeout: time.Duration(d.Get("timeout").(int64)) * time.Second,
+			InactivityTimeout: time.Duration(d.Get("timeout").(int)) * time.Second,
 		}, authConfig[d.Get("registry").(string)])
 		if err != nil {
 			return err
@@ -425,7 +447,11 @@ func resourceDockerImageUpdate(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceDockerImageDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*docker.Client)
+	providerConfig := meta.(*ProviderConfig)
+	client, err := providerConfig.NewClient()
+	if err != nil {
+		return err
+	}
 
 	if d.Get("keep").(bool) {
 		return nil
@@ -442,14 +468,13 @@ func resourceDockerImageDelete(d *schema.ResourceData, meta interface{}) error {
 }
 
 func resourceDockerImageExists(d *schema.ResourceData, meta interface{}) (bool, error) {
-	client := meta.(*docker.Client)
-
-	imageName := strings.Join([]string{d.Get("name").(string), d.Get("tag").(string)}, ":")
-	if d.Get("registry").(string) != "" {
-		imageName = strings.Join([]string{d.Get("registry").(string), imageName}, "/")
+	providerConfig := meta.(*ProviderConfig)
+	client, err := providerConfig.NewClient()
+	if err != nil {
+		return false, err
 	}
 
-	_, err := client.InspectImage(imageName)
+	_, err = client.InspectImage(d.Id())
 	switch err {
 	case nil:
 		return true, nil
