@@ -88,7 +88,7 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"dockerimage_image": resourceDockerImage(),
+			"dockerimage": resourceDockerImage(),
 		},
 
 		ConfigureFunc: providerConfigure,
