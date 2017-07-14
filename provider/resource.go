@@ -21,7 +21,7 @@ func resourceDockerImage() *schema.Resource {
 		Schema: map[string]*schema.Schema{
 			"registry": {
 				Type:     schema.TypeString,
-				Required: true,
+				Required: false,
 				ForceNew: true,
 			},
 
@@ -34,7 +34,7 @@ func resourceDockerImage() *schema.Resource {
 			"tag": {
 				Type:     schema.TypeString,
 				Default:  "latest",
-				Required: true,
+                                Optional: true,
 				ForceNew: true,
 			},
 
@@ -252,10 +252,15 @@ func resourceDockerImageCreate(d *schema.ResourceData, meta interface{}) error {
 		return err
 	}
 
+	repoName := d.Get("name").(string)
+	if d.Get("registry").(string) != "" {
+		repoName = strings.Join([]string{d.Get("registry").(string), repoName}, "/")
+	}
+
 	switch {
 	case d.Get("pull").(bool):
 		err := client.PullImage(docker.PullImageOptions{
-			Repository:        strings.Join([]string{d.Get("registry").(string), d.Get("name").(string)}, ":"),
+			Repository:        repoName,
 			Tag:               d.Get("tag").(string),
 			InactivityTimeout: time.Duration(d.Get("timeout").(int64)) * time.Second,
 		}, authConfig[d.Get("registry").(string)])
@@ -305,7 +310,7 @@ func resourceDockerImageCreate(d *schema.ResourceData, meta interface{}) error {
 		}
 		imageName := strings.Join([]string{d.Get("name").(string), d.Get("tag").(string)}, ":")
 		if d.Get("registry").(string) != "" {
-			imageName = strings.Join([]string{d.Get("registry").(string), imageName}, ":")
+			imageName = strings.Join([]string{d.Get("registry").(string), imageName}, "/")
 		}
 		err := client.BuildImage(docker.BuildImageOptions{
 			Name:              imageName,
@@ -356,7 +361,7 @@ func resourceDockerImageRead(d *schema.ResourceData, meta interface{}) error {
 
 	imageName := strings.Join([]string{d.Get("name").(string), d.Get("tag").(string)}, ":")
 	if d.Get("registry").(string) != "" {
-		imageName = strings.Join([]string{d.Get("registry").(string), imageName}, ":")
+		imageName = strings.Join([]string{d.Get("registry").(string), imageName}, "/")
 	}
 
 	image, err := client.InspectImage(imageName)
@@ -428,7 +433,7 @@ func resourceDockerImageDelete(d *schema.ResourceData, meta interface{}) error {
 
 	imageName := strings.Join([]string{d.Get("name").(string), d.Get("tag").(string)}, ":")
 	if d.Get("registry").(string) != "" {
-		imageName = strings.Join([]string{d.Get("registry").(string), imageName}, ":")
+		imageName = strings.Join([]string{d.Get("registry").(string), imageName}, "/")
 	}
 
 	return client.RemoveImageExtended(imageName, docker.RemoveImageOptions{
@@ -441,7 +446,7 @@ func resourceDockerImageExists(d *schema.ResourceData, meta interface{}) (bool, 
 
 	imageName := strings.Join([]string{d.Get("name").(string), d.Get("tag").(string)}, ":")
 	if d.Get("registry").(string) != "" {
-		imageName = strings.Join([]string{d.Get("registry").(string), imageName}, ":")
+		imageName = strings.Join([]string{d.Get("registry").(string), imageName}, "/")
 	}
 
 	_, err := client.InspectImage(imageName)
