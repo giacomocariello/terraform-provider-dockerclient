@@ -3,7 +3,7 @@
 *.dll
 *.so
 *.dylib
-terraform-provider-dockerimage
+terraform-provider-dockerclient
 
 # Test binary, build with `go test -c`
 *.test

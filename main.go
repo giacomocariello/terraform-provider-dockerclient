@@ -7,7 +7,7 @@ import (
 
 	terraform "github.com/hashicorp/terraform/plugin"
 
-	"github.com/giacomocariello/terraform-provider-dockerimage/provider"
+	"github.com/giacomocariello/terraform-provider-dockerclient/provider"
 )
 
 func main() {

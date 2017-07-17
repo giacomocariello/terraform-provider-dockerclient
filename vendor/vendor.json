@@ -725,5 +725,5 @@
 			"revisionTime": "2017-06-27T16:54:34Z"
 		}
 	],
-	"rootPath": "github.com/giacomocariello/terraform-provider-dockerimage"
+	"rootPath": "github.com/giacomocariello/terraform-provider-dockerclient"
 }

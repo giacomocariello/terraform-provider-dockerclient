@@ -1,5 +1,5 @@
 build:
-  binary: terraform-provider-dockerimage
+  binary: terraform-provider-dockerclient
   goos:
     - darwin
     - linux
