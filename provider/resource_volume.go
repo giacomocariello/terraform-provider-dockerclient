@@ -24,27 +24,38 @@ func resourceDockerVolume() *schema.Resource {
 				Computed: true,
 				ForceNew: true,
 			},
+
                         "host": {
                                 Type:     schema.TypeString,
                                 Optional: true,
                                 ForceNew: true,
                         },
+
                         "machine_name": {
                                 Type:     schema.TypeString,
                                 Optional: true,
                                 ForceNew: true,
                         },
+
+                        "cert_path": {
+                                Type:     schema.TypeString,
+                                Optional: true,
+                                ForceNew: true,
+                        },
+
 			"driver": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 				ForceNew: true,
 			},
+
 			"driver_opts": {
 				Type:     schema.TypeMap,
 				Optional: true,
 				ForceNew: true,
 			},
+
 			"mountpoint": {
 				Type:     schema.TypeString,
 				Computed: true,

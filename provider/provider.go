@@ -168,6 +168,8 @@ func (c *ProviderConfig) GetResolvedConfig(d *schema.ResourceData) (*ProviderCon
 		(len(c.CertMaterial) == 0 && c.CertFile == "") ||
 		(len(c.KeyMaterial) == 0 && c.KeyFile == "") {
 		switch {
+                case d.Get("cert_path").(string) != "":
+                        certPath = d.Get("cert_path").(string)
 		case c.CertPath != "":
 			certPath = c.CertPath
 		case c.StoragePath != "":
