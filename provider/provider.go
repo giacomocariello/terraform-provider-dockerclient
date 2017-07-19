@@ -12,7 +12,8 @@ import (
 )
 
 type ProviderConfig struct {
-	Host         string
+	HostURI      string
+	HostName     string
 	CaMaterial   []byte
 	CertMaterial []byte
 	KeyMaterial  []byte
@@ -25,7 +26,8 @@ type ProviderConfig struct {
 }
 
 type ResourceDockerConfig struct {
-	Host         string
+	HostURI      string
+	HostName     string
 	CaMaterial   []byte
 	CertMaterial []byte
 	KeyMaterial  []byte
@@ -115,7 +117,8 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	return &ProviderConfig{
-		Host: d.Get("default_host").(string),
+		HostURI: d.Get("default_host").(string),
+		HostName: d.Get("default_hostname").(string),
 
 		CaMaterial:   []byte(d.Get("ca_material").(string)),
 		CertMaterial: []byte(d.Get("cert_material").(string)),
@@ -139,11 +142,19 @@ func (c *ProviderConfig) GetResolvedConfig(d *schema.ResourceData) (*ProviderCon
 	var certPath string
 
 	if d.Get("host").(string) != "" {
-		r.Host = d.Get("host").(string)
-	} else if c.Host != "" {
-		r.Host = c.Host
+		r.HostURI = d.Get("host").(string)
+	} else if c.HostURI != "" {
+		r.HostURI = c.HostURI
 	} else {
 		return nil, true, fmt.Errorf("host is not set")
+	}
+
+	if d.Get("hostname").(string) != "" {
+		r.HostName = d.Get("hostname").(string)
+	} else if c.HostName != "" {
+		r.HostName = c.HostName
+	} else {
+		return nil, true, fmt.Errorf("hostname is not set")
 	}
 
 	if (len(c.CaMaterial) == 0 && c.CaFile == "") ||
@@ -153,7 +164,7 @@ func (c *ProviderConfig) GetResolvedConfig(d *schema.ResourceData) (*ProviderCon
 		case c.CertPath != "":
 			certPath = c.CertPath
 		case c.StoragePath != "":
-			certPath = filepath.Join(c.CertPath, "machines", r.Host)
+			certPath = filepath.Join(c.CertPath, "machines", r.HostName)
 		}
 		if _, err := os.Stat(certPath); os.IsNotExist(err) {
 			return nil, true, fmt.Errorf("error trying to stat cert_path: %s", err)
@@ -245,9 +256,9 @@ func (c *ProviderConfig) GetResolvedConfig(d *schema.ResourceData) (*ProviderCon
 
 func (c *ProviderConfig) NewClient() (client *dc.Client, err error) {
 	if len(c.CertMaterial) != 0 && len(c.KeyMaterial) != 0 && len(c.CaMaterial) != 0 {
-		client, err = dc.NewTLSClientFromBytes(c.Host, c.CertMaterial, c.KeyMaterial, c.CaMaterial)
+		client, err = dc.NewTLSClientFromBytes(c.HostURI, c.CertMaterial, c.KeyMaterial, c.CaMaterial)
 	} else {
-		client, err = dc.NewClient(c.Host)
+		client, err = dc.NewClient(c.HostURI)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("error opening docker client: %s", err)
