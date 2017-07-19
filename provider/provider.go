@@ -12,8 +12,8 @@ import (
 )
 
 type ProviderConfig struct {
-	HostURI      string
-	HostName     string
+	Host         string
+	MachineName  string
 	CaMaterial   []byte
 	CertMaterial []byte
 	KeyMaterial  []byte
@@ -26,8 +26,8 @@ type ProviderConfig struct {
 }
 
 type ResourceDockerConfig struct {
-	HostURI      string
-	HostName     string
+	Host         string
+	MachineName  string
 	CaMaterial   []byte
 	CertMaterial []byte
 	KeyMaterial  []byte
@@ -46,6 +46,13 @@ func Provider() terraform.ResourceProvider {
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("DOCKER_HOST", "unix:///var/run/docker.sock"),
 				Description: "The Docker daemon address",
+			},
+
+			"default_machine_name": {
+				Type:        schema.TypeString,
+				Required:    true,
+				DefaultFunc: schema.EnvDefaultFunc("DOCKER_MACHINE_NAME", ""),
+				Description: "The Docker daemon machine name",
 			},
 
 			"ca_material": {
@@ -117,8 +124,8 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	return &ProviderConfig{
-		HostURI: d.Get("default_host").(string),
-		HostName: d.Get("default_hostname").(string),
+		Host: d.Get("default_host").(string),
+		MachineName: d.Get("default_machine_name").(string),
 
 		CaMaterial:   []byte(d.Get("ca_material").(string)),
 		CertMaterial: []byte(d.Get("cert_material").(string)),
@@ -142,19 +149,19 @@ func (c *ProviderConfig) GetResolvedConfig(d *schema.ResourceData) (*ProviderCon
 	var certPath string
 
 	if d.Get("host").(string) != "" {
-		r.HostURI = d.Get("host").(string)
-	} else if c.HostURI != "" {
-		r.HostURI = c.HostURI
+		r.Host = d.Get("host").(string)
+	} else if c.Host != "" {
+		r.Host = c.Host
 	} else {
 		return nil, true, fmt.Errorf("host is not set")
 	}
 
-	if d.Get("hostname").(string) != "" {
-		r.HostName = d.Get("hostname").(string)
-	} else if c.HostName != "" {
-		r.HostName = c.HostName
+	if d.Get("machine_name").(string) != "" {
+		r.MachineName = d.Get("machine_name").(string)
+	} else if c.MachineName != "" {
+		r.MachineName = c.MachineName
 	} else {
-		return nil, true, fmt.Errorf("hostname is not set")
+		return nil, true, fmt.Errorf("machine_name is not set")
 	}
 
 	if (len(c.CaMaterial) == 0 && c.CaFile == "") ||
@@ -164,7 +171,7 @@ func (c *ProviderConfig) GetResolvedConfig(d *schema.ResourceData) (*ProviderCon
 		case c.CertPath != "":
 			certPath = c.CertPath
 		case c.StoragePath != "":
-			certPath = filepath.Join(c.CertPath, "machines", r.HostName)
+			certPath = filepath.Join(c.CertPath, "machines", r.MachineName)
 		}
 		if _, err := os.Stat(certPath); os.IsNotExist(err) {
 			return nil, true, fmt.Errorf("error trying to stat cert_path: %s", err)
@@ -256,9 +263,9 @@ func (c *ProviderConfig) GetResolvedConfig(d *schema.ResourceData) (*ProviderCon
 
 func (c *ProviderConfig) NewClient() (client *dc.Client, err error) {
 	if len(c.CertMaterial) != 0 && len(c.KeyMaterial) != 0 && len(c.CaMaterial) != 0 {
-		client, err = dc.NewTLSClientFromBytes(c.HostURI, c.CertMaterial, c.KeyMaterial, c.CaMaterial)
+		client, err = dc.NewTLSClientFromBytes(c.Host, c.CertMaterial, c.KeyMaterial, c.CaMaterial)
 	} else {
-		client, err = dc.NewClient(c.HostURI)
+		client, err = dc.NewClient(c.Host)
 	}
 	if err != nil {
 		return nil, fmt.Errorf("error opening docker client: %s", err)

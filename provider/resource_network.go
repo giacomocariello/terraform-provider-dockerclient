@@ -34,6 +34,12 @@ func resourceDockerNetwork() *schema.Resource {
                                 ForceNew: true,
                         },
 
+                        "machine_name": {
+                                Type:     schema.TypeString,
+                                Optional: true,
+                                ForceNew: true,
+                        },
+
 			"check_duplicate": {
 				Type:     schema.TypeBool,
 				Optional: true,

@@ -29,6 +29,11 @@ func resourceDockerVolume() *schema.Resource {
                                 Optional: true,
                                 ForceNew: true,
                         },
+                        "machine_name": {
+                                Type:     schema.TypeString,
+                                Optional: true,
+                                ForceNew: true,
+                        },
 			"driver": {
 				Type:     schema.TypeString,
 				Optional: true,

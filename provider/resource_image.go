@@ -27,6 +27,12 @@ func resourceDockerImage() *schema.Resource {
 				ForceNew: true,
 			},
 
+			"machine_name": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+
 			"registry": {
 				Type:     schema.TypeString,
 				Optional: true,
