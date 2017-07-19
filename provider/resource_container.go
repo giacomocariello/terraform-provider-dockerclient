@@ -260,7 +260,7 @@ func resourceDockerContainer() *schema.Resource {
 				Set: resourceDockerPortsHash,
 			},
 
-			"host": {
+			"extra_hosts": {
 				Type:     schema.TypeSet,
 				Optional: true,
 				ForceNew: true,
