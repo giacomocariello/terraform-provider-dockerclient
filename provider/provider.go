@@ -103,7 +103,10 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"dockerclient_image": resourceDockerImage(),
+			"dockerclient_container": resourceDockerContainer(),
+			"dockerclient_image":     resourceDockerImage(),
+			"dockerclient_network":   resourceDockerNetwork(),
+			"dockerclient_volume":    resourceDockerVolume(),
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -112,136 +115,136 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	return &ProviderConfig{
-		Host:         d.Get("default_host").(string),
+		Host: d.Get("default_host").(string),
 
 		CaMaterial:   []byte(d.Get("ca_material").(string)),
 		CertMaterial: []byte(d.Get("cert_material").(string)),
 		KeyMaterial:  []byte(d.Get("key_material").(string)),
 
-		CaFile:       d.Get("ca_file").(string),
-		CertFile:     d.Get("cert_file").(string),
-		KeyFile:      d.Get("key_file").(string),
+		CaFile:   d.Get("ca_file").(string),
+		CertFile: d.Get("cert_file").(string),
+		KeyFile:  d.Get("key_file").(string),
 
-		CertPath:     d.Get("cert_path").(string),
-		StoragePath:  d.Get("storage_path").(string),
+		CertPath:    d.Get("cert_path").(string),
+		StoragePath: d.Get("storage_path").(string),
 
-		Ping:         d.Get("ping").(bool),
+		Ping: d.Get("ping").(bool),
 	}, nil
 }
 
 func (c *ProviderConfig) GetResolvedConfig(d *schema.ResourceData) (*ProviderConfig, bool, error) {
-        r := &ProviderConfig{
-            Ping: c.Ping,
-        }
-        var certPath string
+	r := &ProviderConfig{
+		Ping: c.Ping,
+	}
+	var certPath string
 
-        if d.Get("host").(string) != "" {
-                r.Host = d.Get("host").(string)
-        } else if c.Host != "" {
-                r.Host = c.Host
-        } else {
-                return nil, true, fmt.Errorf("host is not set")
-        }
+	if d.Get("host").(string) != "" {
+		r.Host = d.Get("host").(string)
+	} else if c.Host != "" {
+		r.Host = c.Host
+	} else {
+		return nil, true, fmt.Errorf("host is not set")
+	}
 
-        if (len(c.CaMaterial) == 0 && c.CaFile == "") ||
-           (len(c.CertMaterial) == 0 && c.CertFile == "") ||
-           (len(c.KeyMaterial) == 0 && c.KeyFile == "") {
-                switch {
-                case c.CertPath != "":
-                        certPath = c.CertPath
-                case c.StoragePath != "":
-                        certPath = filepath.Join(c.CertPath, "machines", r.Host)
-                }
-                if _, err := os.Stat(certPath); os.IsNotExist(err) {
-                        return nil, true, fmt.Errorf("error trying to stat cert_path: %s", err)
-                } else if err != nil {
-                        return nil, false, fmt.Errorf("error trying to stat cert_path: %s", err)
-                }
-        }
+	if (len(c.CaMaterial) == 0 && c.CaFile == "") ||
+		(len(c.CertMaterial) == 0 && c.CertFile == "") ||
+		(len(c.KeyMaterial) == 0 && c.KeyFile == "") {
+		switch {
+		case c.CertPath != "":
+			certPath = c.CertPath
+		case c.StoragePath != "":
+			certPath = filepath.Join(c.CertPath, "machines", r.Host)
+		}
+		if _, err := os.Stat(certPath); os.IsNotExist(err) {
+			return nil, true, fmt.Errorf("error trying to stat cert_path: %s", err)
+		} else if err != nil {
+			return nil, false, fmt.Errorf("error trying to stat cert_path: %s", err)
+		}
+	}
 
-        if len(c.CaMaterial) != 0 {
+	if len(c.CaMaterial) != 0 {
 		r.CaMaterial = c.CaMaterial
-        } else {
+	} else {
 		var caFile string
 		switch {
 		case c.CaFile != "":
-                        caFile = c.CaFile
+			caFile = c.CaFile
 		case certPath != "":
-                        caFile = filepath.Join(certPath, "ca.pem")
+			caFile = filepath.Join(certPath, "ca.pem")
 		}
-                if caFile != "" {
-                        if _, err := os.Stat(caFile); err == nil {
-                                r.CaMaterial, err = ioutil.ReadFile(caFile)
-                                if err != nil {
-                                        return nil, false, fmt.Errorf("error reading ca file: %s", err)
-                                }
-                        } else {
-                                return nil, false, fmt.Errorf("error reading ca file: %s", err)
-                        }
-                }
+		if caFile != "" {
+			if _, err := os.Stat(caFile); err == nil {
+				r.CaMaterial, err = ioutil.ReadFile(caFile)
+				if err != nil {
+					return nil, false, fmt.Errorf("error reading ca file: %s", err)
+				}
+			} else {
+				return nil, false, fmt.Errorf("error reading ca file: %s", err)
+			}
+		}
 	}
 
-        if len(c.CertMaterial) != 0 {
+	if len(c.CertMaterial) != 0 {
 		r.CertMaterial = c.CertMaterial
-        } else {
+	} else {
 		var certFile string
 		switch {
 		case c.CertFile != "":
-                        certFile = c.CertFile
+			certFile = c.CertFile
 		case certPath != "":
-                        certFile = filepath.Join(certPath, "cert.pem")
+			certFile = filepath.Join(certPath, "cert.pem")
 		}
-                if certFile != "" {
-                        if _, err := os.Stat(certFile); err == nil {
-                                r.CertMaterial, err = ioutil.ReadFile(certFile)
-                                if err != nil {
-                                        return nil, false, fmt.Errorf("error reading cert file: %s", err)
-                                }
-                        } else {
-                                return nil, false, fmt.Errorf("error reading cert file: %s", err)
-                        }
-                }
+		if certFile != "" {
+			if _, err := os.Stat(certFile); err == nil {
+				r.CertMaterial, err = ioutil.ReadFile(certFile)
+				if err != nil {
+					return nil, false, fmt.Errorf("error reading cert file: %s", err)
+				}
+			} else {
+				return nil, false, fmt.Errorf("error reading cert file: %s", err)
+			}
+		}
 	}
 
-        if len(c.KeyMaterial) != 0 {
+	if len(c.KeyMaterial) != 0 {
 		r.KeyMaterial = c.KeyMaterial
-        } else {
+	} else {
 		var keyFile string
 		switch {
 		case c.KeyFile != "":
-                        keyFile = c.KeyFile
+			keyFile = c.KeyFile
 		case certPath != "":
-                        keyFile = filepath.Join(certPath, "key.pem")
+			keyFile = filepath.Join(certPath, "key.pem")
 		}
-                if keyFile != "" {
-                        if _, err := os.Stat(keyFile); err == nil {
-                                r.KeyMaterial, err = ioutil.ReadFile(keyFile)
-                                if err != nil {
-                                        return nil, false, fmt.Errorf("error reading key file: %s", err)
-                                }
-                        } else {
-                                return nil, false, fmt.Errorf("error reading key file: %s", err)
-                        }
-                }
+		if keyFile != "" {
+			if _, err := os.Stat(keyFile); err == nil {
+				r.KeyMaterial, err = ioutil.ReadFile(keyFile)
+				if err != nil {
+					return nil, false, fmt.Errorf("error reading key file: %s", err)
+				}
+			} else {
+				return nil, false, fmt.Errorf("error reading key file: %s", err)
+			}
+		}
 	}
 
-        if len(c.CaMaterial) > 0 || len(c.CertMaterial) > 0 || len(c.KeyMaterial) > 0 {
-                if len(c.CaMaterial) == 0 {
-                        return nil, false, fmt.Errorf("missing CA certificate")
-                }
-                if len(c.CertMaterial) == 0 {
-                        return nil, false, fmt.Errorf("missing client certificate")
-                }
-                if len(c.KeyMaterial) == 0 {
-                        return nil, false, fmt.Errorf("missing key certificate")
-                }
+	if len(c.CaMaterial) > 0 || len(c.CertMaterial) > 0 || len(c.KeyMaterial) > 0 {
+		if len(c.CaMaterial) == 0 {
+			return nil, false, fmt.Errorf("missing CA certificate")
+		}
+		if len(c.CertMaterial) == 0 {
+			return nil, false, fmt.Errorf("missing client certificate")
+		}
+		if len(c.KeyMaterial) == 0 {
+			return nil, false, fmt.Errorf("missing key certificate")
+		}
 	}
 
 	return r, false, nil
 }
 
 func (c *ProviderConfig) NewClient() (client *dc.Client, err error) {
-        if len(c.CertMaterial) != 0 && len(c.KeyMaterial) != 0 && len(c.CaMaterial) != 0 {
+	if len(c.CertMaterial) != 0 && len(c.KeyMaterial) != 0 && len(c.CaMaterial) != 0 {
 		client, err = dc.NewTLSClientFromBytes(c.Host, c.CertMaterial, c.KeyMaterial, c.CaMaterial)
 	} else {
 		client, err = dc.NewClient(c.Host)

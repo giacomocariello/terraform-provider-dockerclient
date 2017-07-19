@@ -249,10 +249,10 @@ func resourceDockerImage() *schema.Resource {
 
 func resourceDockerImageCreate(d *schema.ResourceData, meta interface{}) error {
 	providerConfig := meta.(*ProviderConfig)
-        resolvedConfig, _, err := providerConfig.GetResolvedConfig(d)
-        if err != nil {
-                return err
-        }
+	resolvedConfig, _, err := providerConfig.GetResolvedConfig(d)
+	if err != nil {
+		return err
+	}
 	client, err := resolvedConfig.NewClient()
 	if err != nil {
 		return err
@@ -380,10 +380,10 @@ func resourceDockerImageCreate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceDockerImageRead(d *schema.ResourceData, meta interface{}) error {
 	providerConfig := meta.(*ProviderConfig)
-        resolvedConfig, _, err := providerConfig.GetResolvedConfig(d)
-        if err != nil {
-                return err
-        }
+	resolvedConfig, _, err := providerConfig.GetResolvedConfig(d)
+	if err != nil {
+		return err
+	}
 	client, err := resolvedConfig.NewClient()
 	if err != nil {
 		return err
@@ -430,10 +430,10 @@ func getAuthConfig(d *schema.ResourceData) (map[string]docker.AuthConfiguration,
 
 func resourceDockerImageUpdate(d *schema.ResourceData, meta interface{}) error {
 	providerConfig := meta.(*ProviderConfig)
-        resolvedConfig, _, err := providerConfig.GetResolvedConfig(d)
-        if err != nil {
-                return err
-        }
+	resolvedConfig, _, err := providerConfig.GetResolvedConfig(d)
+	if err != nil {
+		return err
+	}
 	client, err := resolvedConfig.NewClient()
 	if err != nil {
 		return err
@@ -460,10 +460,10 @@ func resourceDockerImageUpdate(d *schema.ResourceData, meta interface{}) error {
 
 func resourceDockerImageDelete(d *schema.ResourceData, meta interface{}) error {
 	providerConfig := meta.(*ProviderConfig)
-        resolvedConfig, _, err := providerConfig.GetResolvedConfig(d)
-        if err != nil {
-                return err
-        }
+	resolvedConfig, _, err := providerConfig.GetResolvedConfig(d)
+	if err != nil {
+		return err
+	}
 	client, err := resolvedConfig.NewClient()
 	if err != nil {
 		return err
@@ -485,13 +485,13 @@ func resourceDockerImageDelete(d *schema.ResourceData, meta interface{}) error {
 
 func resourceDockerImageExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	providerConfig := meta.(*ProviderConfig)
-        resolvedConfig, deferred, err := providerConfig.GetResolvedConfig(d)
-        if deferred {
-                return false, nil
-        }
-        if err != nil {
-                return false, err
-        }
+	resolvedConfig, deferred, err := providerConfig.GetResolvedConfig(d)
+	if deferred {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
 	client, err := resolvedConfig.NewClient()
 	if err != nil {
 		return false, err
