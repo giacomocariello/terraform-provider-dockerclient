@@ -21,6 +21,12 @@ func resourceDockerImage() *schema.Resource {
 		Exists: resourceDockerImageExists,
 
 		Schema: map[string]*schema.Schema{
+			"host": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
+
 			"registry": {
 				Type:     schema.TypeString,
 				Optional: true,
