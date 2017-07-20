@@ -124,7 +124,7 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	return &ProviderConfig{
-		Host: d.Get("default_host").(string),
+		Host:        d.Get("default_host").(string),
 		MachineName: d.Get("default_machine_name").(string),
 
 		CaMaterial:   []byte(d.Get("ca_material").(string)),
@@ -168,8 +168,8 @@ func (c *ProviderConfig) GetResolvedConfig(d *schema.ResourceData) (*ProviderCon
 		(len(c.CertMaterial) == 0 && c.CertFile == "") ||
 		(len(c.KeyMaterial) == 0 && c.KeyFile == "") {
 		switch {
-                case d.Get("cert_path").(string) != "":
-                        certPath = d.Get("cert_path").(string)
+		case d.Get("cert_path").(string) != "":
+			certPath = d.Get("cert_path").(string)
 		case c.CertPath != "":
 			certPath = c.CertPath
 		case c.StoragePath != "":

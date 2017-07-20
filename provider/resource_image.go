@@ -33,11 +33,11 @@ func resourceDockerImage() *schema.Resource {
 				ForceNew: true,
 			},
 
-                        "cert_path": {
-                                Type:     schema.TypeString,
-                                Optional: true,
-                                ForceNew: true,
-                        },
+			"cert_path": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: true,
+			},
 
 			"registry": {
 				Type:     schema.TypeString,
