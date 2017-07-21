@@ -2,7 +2,6 @@ package provider
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -256,10 +255,25 @@ func resourceDockerImage() *schema.Resource {
 			},
 
 			"auth": {
-				Type:      schema.TypeMap,
-				Elem:      &schema.Schema{Type: schema.TypeString},
+				Type:      schema.TypeList,
+                                Elem: &schema.Resource{
+                                    Schema: map[string]*schema.Schema{
+			                "registry": {
+				            Type:     schema.TypeString,
+                                            Required: true,
+			                },
+			                "username": {
+				            Type:     schema.TypeString,
+                                            Required: true,
+			                },
+			                "password": {
+				            Type:     schema.TypeString,
+                                            Required: true,
+                                            Sensitive: true,
+			                },
+                                    },
+                                },
 				Optional:  true,
-				Sensitive: true,
 			},
 		},
 	}
@@ -382,7 +396,7 @@ func resourceDockerImageCreate(d *schema.ResourceData, meta interface{}) error {
 
 	if d.Get("push").(bool) {
 		err := client.PushImage(docker.PushImageOptions{
-			Name:              d.Get("name").(string),
+			Name:              strings.Join([]string{d.Get("registry").(string), d.Get("name").(string)}, "/"),
 			Registry:          d.Get("registry").(string),
 			Tag:               d.Get("tag").(string),
 			InactivityTimeout: time.Duration(d.Get("timeout").(int)) * time.Second,
@@ -430,17 +444,12 @@ func resourceDockerImageRead(d *schema.ResourceData, meta interface{}) error {
 
 func getAuthConfig(d *schema.ResourceData) (map[string]docker.AuthConfiguration, error) {
 	authConfig := make(map[string]docker.AuthConfiguration)
-	authData := d.Get("auth").(map[string]interface{})
-	for authAddress, authPassword := range authData {
-		p := strings.SplitN(authAddress, "@", 2)
-		if len(p) < 2 {
-			return nil, fmt.Errorf("Invalid value for field \"auth\"")
-		}
-		authHostname, authUsername := p[1], p[0]
-		authConfig[authHostname] = docker.AuthConfiguration{
-			Username:      authUsername,
-			Password:      authPassword.(string),
-			ServerAddress: authHostname,
+	authList := d.Get("auth").([]interface{})
+	for _, authEntryIf := range authList {
+                authEntry := authEntryIf.(map[string]interface{})
+		authConfig[authEntry["registry"].(string)] = docker.AuthConfiguration{
+			Username:      authEntry["username"].(string),
+			Password:      authEntry["password"].(string),
 		}
 	}
 	return authConfig, nil
@@ -464,7 +473,7 @@ func resourceDockerImageUpdate(d *schema.ResourceData, meta interface{}) error {
 
 	if d.HasChange("push") && d.Get("push").(bool) {
 		err := client.PushImage(docker.PushImageOptions{
-			Name:              d.Get("name").(string),
+			Name:              strings.Join([]string{d.Get("registry").(string), d.Get("name").(string)}, "/"),
 			Registry:          d.Get("registry").(string),
 			Tag:               d.Get("tag").(string),
 			InactivityTimeout: time.Duration(d.Get("timeout").(int)) * time.Second,
