@@ -18,6 +18,7 @@ func resourceDockerNetwork() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceDockerNetworkCreate,
 		Read:   resourceDockerNetworkRead,
+		Update: resourceDockerNetworkUpdate,
 		Delete: resourceDockerNetworkDelete,
 		Exists: resourceDockerNetworkExists,
 
@@ -272,6 +273,10 @@ func resourceDockerNetworkRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("options", retNetwork.Options)
 	d.Set("internal", retNetwork.Internal)
 
+	return nil
+}
+
+func resourceDockerNetworkUpdate(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 

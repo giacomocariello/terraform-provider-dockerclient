@@ -14,6 +14,7 @@ func resourceDockerVolume() *schema.Resource {
 	return &schema.Resource{
 		Create: resourceDockerVolumeCreate,
 		Read:   resourceDockerVolumeRead,
+		Update: resourceDockerVolumeUpdate,
 		Delete: resourceDockerVolumeDelete,
 		Exists: resourceDockerVolumeExists,
 
@@ -144,6 +145,10 @@ func resourceDockerVolumeRead(d *schema.ResourceData, meta interface{}) error {
 	d.Set("driver", retVolume.Driver)
 	d.Set("mountpoint", retVolume.Mountpoint)
 
+	return nil
+}
+
+func resourceDockerVolumeUpdate(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
