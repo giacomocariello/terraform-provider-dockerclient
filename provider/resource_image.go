@@ -35,7 +35,25 @@ func resourceDockerImage() *schema.Resource {
 			"cert_path": {
 				Type:     schema.TypeString,
 				Optional: true,
-				ForceNew: true,
+				ForceNew: false,
+			},
+
+			"ca_material": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: false,
+			},
+
+			"cert_material": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: false,
+			},
+
+			"key_material": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: false,
 			},
 
 			"registry": {
@@ -255,25 +273,25 @@ func resourceDockerImage() *schema.Resource {
 			},
 
 			"auth": {
-				Type:      schema.TypeList,
-                                Elem: &schema.Resource{
-                                    Schema: map[string]*schema.Schema{
-			                "registry": {
-				            Type:     schema.TypeString,
-                                            Required: true,
-			                },
-			                "username": {
-				            Type:     schema.TypeString,
-                                            Required: true,
-			                },
-			                "password": {
-				            Type:     schema.TypeString,
-                                            Required: true,
-                                            Sensitive: true,
-			                },
-                                    },
-                                },
-				Optional:  true,
+				Type: schema.TypeList,
+				Elem: &schema.Resource{
+					Schema: map[string]*schema.Schema{
+						"registry": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"username": {
+							Type:     schema.TypeString,
+							Required: true,
+						},
+						"password": {
+							Type:      schema.TypeString,
+							Required:  true,
+							Sensitive: true,
+						},
+					},
+				},
+				Optional: true,
 			},
 		},
 	}
@@ -446,10 +464,10 @@ func getAuthConfig(d *schema.ResourceData) (map[string]docker.AuthConfiguration,
 	authConfig := make(map[string]docker.AuthConfiguration)
 	authList := d.Get("auth").([]interface{})
 	for _, authEntryIf := range authList {
-                authEntry := authEntryIf.(map[string]interface{})
+		authEntry := authEntryIf.(map[string]interface{})
 		authConfig[authEntry["registry"].(string)] = docker.AuthConfiguration{
-			Username:      authEntry["username"].(string),
-			Password:      authEntry["password"].(string),
+			Username: authEntry["username"].(string),
+			Password: authEntry["password"].(string),
 		}
 	}
 	return authConfig, nil

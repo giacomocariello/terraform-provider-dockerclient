@@ -34,16 +34,34 @@ func resourceDockerNetwork() *schema.Resource {
 				ForceNew: true,
 			},
 
-			"cert_path": {
+			"machine_name": {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: true,
 			},
 
-			"machine_name": {
+			"cert_path": {
 				Type:     schema.TypeString,
 				Optional: true,
-				ForceNew: true,
+				ForceNew: false,
+			},
+
+			"ca_material": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: false,
+			},
+
+			"cert_material": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: false,
+			},
+
+			"key_material": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: false,
 			},
 
 			"check_duplicate": {

@@ -182,7 +182,9 @@ func (c *ProviderConfig) GetResolvedConfig(d *schema.ResourceData) (*ProviderCon
 		}
 	}
 
-	if len(c.CaMaterial) != 0 {
+        if d.Get("ca_material").(string) != "" {
+                r.CaMaterial = []byte(d.Get("ca_material").(string))
+        } else if len(c.CaMaterial) != 0 {
 		r.CaMaterial = c.CaMaterial
 	} else {
 		var caFile string
@@ -204,7 +206,9 @@ func (c *ProviderConfig) GetResolvedConfig(d *schema.ResourceData) (*ProviderCon
 		}
 	}
 
-	if len(c.CertMaterial) != 0 {
+        if d.Get("cert_material").(string) != "" {
+                r.CertMaterial = []byte(d.Get("cert_material").(string))
+        } else if len(c.CertMaterial) != 0 {
 		r.CertMaterial = c.CertMaterial
 	} else {
 		var certFile string
@@ -226,7 +230,9 @@ func (c *ProviderConfig) GetResolvedConfig(d *schema.ResourceData) (*ProviderCon
 		}
 	}
 
-	if len(c.KeyMaterial) != 0 {
+        if d.Get("key_material").(string) != "" {
+                r.KeyMaterial = []byte(d.Get("key_material").(string))
+        } else if len(c.KeyMaterial) != 0 {
 		r.KeyMaterial = c.KeyMaterial
 	} else {
 		var keyFile string

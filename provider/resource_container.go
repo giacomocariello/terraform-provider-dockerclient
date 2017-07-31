@@ -52,7 +52,25 @@ func resourceDockerContainer() *schema.Resource {
 			"cert_path": {
 				Type:     schema.TypeString,
 				Optional: true,
-				ForceNew: true,
+				ForceNew: false,
+			},
+
+			"ca_material": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: false,
+			},
+
+			"cert_material": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: false,
+			},
+
+			"key_material": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: false,
 			},
 
 			// Indicates whether the container must be running.
