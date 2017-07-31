@@ -175,7 +175,8 @@ func (c *ProviderConfig) GetResolvedConfig(d *schema.ResourceData) (*ProviderCon
 		case c.StoragePath != "":
 			certPath = filepath.Join(c.StoragePath, "machines", r.MachineName)
 		}
-		if _, err := os.Stat(certPath); os.IsNotExist(err) {
+                if certPath == "" {
+                } else if _, err := os.Stat(certPath); os.IsNotExist(err) {
 			return nil, true, fmt.Errorf("error trying to stat cert_path: %s", err)
 		} else if err != nil {
 			return nil, false, fmt.Errorf("error trying to stat cert_path: %s", err)
