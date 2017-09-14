@@ -71,6 +71,7 @@ func resourceDockerContainer() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: false,
+                                Sensitive:true,
 			},
 
 			// Indicates whether the container must be running.

@@ -64,7 +64,7 @@ func Provider() terraform.ResourceProvider {
 			"ca_file": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "PEM-encoded content of Docker host CA certificate",
+				Description: "Path to PEM-encoded content of Docker host CA certificate",
 			},
 
 			"cert_material": {
@@ -76,7 +76,7 @@ func Provider() terraform.ResourceProvider {
 			"cert_file": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "PEM-encoded content of Docker client certificate",
+				Description: "Path to PEM-encoded content of Docker client certificate",
 			},
 
 			"key_material": {
@@ -84,11 +84,12 @@ func Provider() terraform.ResourceProvider {
 				Optional:    true,
 				DefaultFunc: schema.EnvDefaultFunc("DOCKER_KEY_MATERIAL", ""),
 				Description: "PEM-encoded content of Docker client private key",
+                                Sensitive:   true,
 			},
 			"key_file": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "PEM-encoded content of Docker client private key",
+				Description: "Path to PEM-encoded content of Docker client private key",
 			},
 
 			"cert_path": {

@@ -54,6 +54,7 @@ func resourceDockerImage() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: false,
+                                Sensitive:true,
 			},
 
 			"registry": {

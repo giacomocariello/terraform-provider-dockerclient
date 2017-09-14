@@ -60,6 +60,7 @@ func resourceDockerVolume() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 				ForceNew: false,
+                                Sensitive:true,
 			},
 
 			"driver": {
