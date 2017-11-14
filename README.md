@@ -1,7 +1,7 @@
 # terraform-provider-dockerclient
 Docker client provider for Terraform
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/giacomocariello/terraform-provider-dockerclient)](https://goreportcard.com/report/github.com/giacomocariello/terraform-provider-dockerclient) [![Build Status](https://travis-ci.org/giacomocariello/terraform-provider-dockerclient.svg?branch=master)](https://travis-ci.org/giacomocariello/terraform-provider-dockerclient)
+[![Go Report Card](https://goreportcard.com/badge/github.com/gstruct/terraform-provider-dockerclient)](https://goreportcard.com/report/github.com/gstruct/terraform-provider-dockerclient) [![Build Status](https://travis-ci.org/gstruct/terraform-provider-dockerclient.svg?branch=master)](https://travis-ci.org/gstruct/terraform-provider-dockerclient)
 
 ## Requisites
 
@@ -11,5 +11,5 @@ Docker client provider for Terraform
 
 ## Install
 ```
-$ go get github.com/giacomocariello/terraform-provider-dockerclient
+$ go get github.com/gstruct/terraform-provider-dockerclient
 ```
